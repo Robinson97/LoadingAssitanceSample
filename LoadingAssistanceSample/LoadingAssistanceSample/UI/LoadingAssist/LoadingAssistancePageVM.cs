@@ -1,5 +1,6 @@
 ﻿using LoadingAssistanceSample.Business.Base;
 using LoadingAssistanceSample.Business.TaskManager;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Net;
@@ -18,6 +19,11 @@ namespace LoadingAssistanceSample.UI.LoadingAssist
 
 
         #region Propertys
+        /// <summary>
+        /// Zielseite
+        /// </summary>
+        public ContentPage TargetPage { get; set; }
+
 
         /// <summary>
         /// Text, which will shown during the loading session
@@ -47,7 +53,7 @@ namespace LoadingAssistanceSample.UI.LoadingAssist
 
         public List<TaskResult> TaskResults { get; set; }
 
-        public Collection<Task<object>> TaskCollection { get; set; }
+        public TaskCollection<Task<object>> TaskCollection { get; set; }
         #endregion
 
         #region Command
@@ -94,12 +100,33 @@ namespace LoadingAssistanceSample.UI.LoadingAssist
 
         public async void RunParamTasksAsync(IEnumerable<Task<object>> paramTaks)
         {
+            //Zwei Möglichkeiten
+            // -> Nur Tasks die einen Rückgabewert haben
+            // -> Zwei Listen für Tasks mit und ohne eine ohne Rückgabewert
             TaskManager taskManager = new TaskManager();
             await taskManager.RunTaskAsync(paramTaks);
             TaskResults = taskManager.TaskResults;
             await Application.Current.MainPage.Navigation.PopAsync();
+            List<Task<object>> objList = new List<Task<object>>(paramTaks);
+            objList.ForEach(x => Console.WriteLine(x.Result));
         }
 
+       
+
+        /// <summary>
+        /// Erstellt Testdaten
+        /// </summary>
+        private void CreateTmpData()
+        {
+            Task<object> calc = CalculateASimpleTaskAsync();
+            Task<object> webHTML = GetHTMLFromWebside();
+            Task<bool> refferentError = ThrowAnError();
+            TaskCollection.Add(calc);
+            TaskCollection.Add(webHTML);
+            TaskCollection.Add(refferentError);
+        }
+
+        #region testTasks
         public async Task<object> CalculateASimpleTaskAsync()
         {
             int answer = 5 + 5;
@@ -108,7 +135,7 @@ namespace LoadingAssistanceSample.UI.LoadingAssist
         }
 
         /// <summary>
-        /// 
+        /// Gibt den HTMLCode von einer Webseite zurück
         /// </summary>
         /// <returns></returns>
         public async Task<object> GetHTMLFromWebside()
@@ -121,15 +148,11 @@ namespace LoadingAssistanceSample.UI.LoadingAssist
             return htmlCode;
         }
 
-        /// <summary>
-        /// Erstellt Testdaten
-        /// </summary>
-        private void CreateTmpData()
+        public async Task<bool> ThrowAnError()
         {
-            Task<object> calc = CalculateASimpleTaskAsync();
-            Task<object> webHTML = GetHTMLFromWebside();
-            TaskCollection.Add(calc);
-            TaskCollection.Add(webHTML);
+            throw new NullReferenceException();
+            return false;
         }
+        #endregion
     }
 }
